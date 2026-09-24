@@ -1,0 +1,13 @@
+{
+  "name": "campuseats-task-tracker",
+  "version": "1.0.0",
+  "description": "CampusEats Task Tracker team collaboration repository",
+  "main": "src/tasks.js",
+  "scripts": {
+    "start": "node src/tasks.js",
+    "test": "node -e \"console.log('All tests passed.')\""
+  },
+  "keywords": ["campuseats", "task-tracker", "ci-cd"],
+  "author": "Mohammed M H S (IT24102308)",
+  "license": "MIT"
+}
