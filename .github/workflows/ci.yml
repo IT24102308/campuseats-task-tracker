@@ -1,23 +1,58 @@
-name: CI
+name: Build and Check
 
 on:
   push:
-    branches: [ "main", "feature/**", "chore/**" ]
+    branches:
+      - main
+      - "feature/**"
+      - "chore/**"
+      - "fix/**"
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build-and-check:
+  validate:
+    name: Validate Project Structure
     runs-on: ubuntu-latest
+
     steps:
-      - name: Check out the repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List repository files
-        run: ls -la
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
 
-      - name: Basic project check
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify required files exist
         run: |
-          echo "Running CI for CampusEats Task Tracker"
-          test -f README.md && echo "README found"
-          node src/tasks.js
+          echo "Checking required project files..."
+          test -f README.md && echo "✅ README.md found" || (echo "❌ README.md missing" && exit 1)
+          test -f package.json && echo "✅ package.json found" || (echo "❌ package.json missing" && exit 1)
+          test -f .gitignore && echo "✅ .gitignore found" || (echo "❌ .gitignore missing" && exit 1)
+          test -f src/tasks.js && echo "✅ src/tasks.js found" || (echo "❌ src/tasks.js missing" && exit 1)
+          test -f .github/workflows/ci.yml && echo "✅ ci.yml found" || (echo "❌ ci.yml missing" && exit 1)
+
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded API keys or secrets..."
+          if grep -r "sk_live_" src/ --include="*.js"; then
+            echo "❌ Hardcoded secret detected in src/!"
+            exit 1
+          fi
+          if grep -r "API_KEY=" src/ --include="*.js" | grep -v "process.env"; then
+            echo "❌ Hardcoded API key detected in src/!"
+            exit 1
+          fi
+          echo "✅ No hardcoded secrets found"
+
+      - name: Run Node.js smoke test
+        run: node src/tasks.js
+
+      - name: Run tests
+        run: npm test
